@@ -56,7 +56,7 @@ export default function App() {
                   ></path>
                 </svg>
 
-                <h3 className="text-lg font-semibold">Mick</h3>
+                <h3 className="text-lg font-semibold">Mick J.</h3>
               </div>
             </nav>
           </header>
