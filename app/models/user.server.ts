@@ -43,11 +43,12 @@ export async function getProfileById(id: string) {
 }
 
 export async function getProfileByEmail(email?: string) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("email, id")
-    .eq("email", email)
-    .single();
+  console.log("supabase=== ", await supabase.from("profiles").select("*"));
+  const { data, error } = await supabase.from("profiles").select("*").single();
+  // .eq("email", email);
+
+  console.log("data==== ", data);
+  console.log("erro== ", error);
 
   if (error) return null;
   if (data) return data;
