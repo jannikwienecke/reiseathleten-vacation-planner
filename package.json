@@ -37,10 +37,12 @@
     "bcryptjs": "^2.4.3",
     "cypress": "^10.4.0",
     "date-fns": "^2.30.0",
-    "react": "^17.0.2",
+    "framer-motion": "^10.12.16",
+    "react": "^18.0.2",
     "react-day-picker": "^8.7.1",
-    "react-dom": "^17.0.2",
+    "react-dom": "18",
     "react-spring-bottom-sheet": "^3.4.1",
+    "tailwindcss-radix": "^2.8.0",
     "tiny-invariant": "^1.2.0"
   },
   "devDependencies": {

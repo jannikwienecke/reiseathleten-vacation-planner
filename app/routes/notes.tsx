@@ -5,7 +5,7 @@ import { useLoaderData } from "@remix-run/react";
 // import { clsx } from 'clsx'
 // import { getUserImgSrc } from '~/utils/misc.ts'
 import { Dialog, Transition } from "@headlessui/react";
-import { addDays } from "date-fns";
+import { addDays, format } from "date-fns";
 import { Fragment } from "react";
 import { DateRange, DayPicker } from "react-day-picker";
 import styles from "react-day-picker/dist/style.module.css";
@@ -15,15 +15,114 @@ import React from "react";
 // import styles from "./notes/planner.css";
 import { requireUserId } from "~/session.server";
 import { GeneralErrorBoundary } from "~/components/error-boundary";
+import { motion } from "framer-motion";
 
 export function links() {
   return [{ rel: "stylesheet", href: styles }];
 }
 
+interface Activity {
+  id: string;
+  title: string;
+  description: string;
+  datetime?: string;
+  duration: number;
+  fixedDate: boolean;
+  tags: string[];
+}
+
+interface LocationInfo {
+  hotelName: string;
+  address: string;
+  city: string;
+  country: string;
+}
+
+interface contact {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+interface Note {
+  id: string;
+  title: string;
+  description: string;
+}
+
+interface Vacation {
+  id: string;
+  startDate: string;
+  endDate: string;
+  locationInfo: LocationInfo;
+  contact: contact;
+  activities: Activity[];
+  notes: Note[];
+}
+
+const activities: Activity[] = [
+  {
+    id: "1",
+    title: "Yoga Session",
+    description: "Yoga session with my friend",
+    datetime: new Date().toISOString(),
+    duration: 60,
+    fixedDate: true,
+    tags: ["yoga", "fitness"],
+  },
+  {
+    id: "2",
+    title: "Personal Training",
+    description: "Personal training with my friend",
+    datetime: new Date().toISOString(),
+    duration: 60,
+    fixedDate: false,
+    tags: ["fitness", "hardcore"],
+  },
+  {
+    id: "3",
+    title: "Mount Hiking",
+    description: "Hike to the top of the mountain",
+    datetime: new Date().toISOString(),
+    duration: 60,
+    fixedDate: true,
+    tags: ["hiking", "outdoor"],
+  },
+  {
+    id: "4",
+    title: "Yoga Session 2",
+    description: "Yoga session with my friend",
+    datetime: new Date().toISOString(),
+    duration: 60,
+    fixedDate: true,
+    tags: ["yoga", "fitness"],
+  },
+  {
+    id: "5",
+    title: "Personal Training 2",
+    description: "Personal training with my friend",
+    datetime: new Date().toISOString(),
+    duration: 60,
+    fixedDate: false,
+    tags: ["fitness", "hardcore"],
+  },
+  {
+    id: "6",
+    title: "Mount Hiking 2",
+    description: "Hike to the top of the mountain",
+    datetime: new Date().toISOString(),
+    duration: 60,
+    fixedDate: true,
+    tags: ["hiking", "outdoor"],
+  },
+];
+
 export async function loader({ request }: DataFunctionArgs) {
   const userId = await requireUserId(request);
   // const noteListItems = await getNoteListItems({ userId });
-  return [];
+  return {
+    activities,
+  };
 }
 
 // export async function loader({ params, request }: DataFunctionArgs) {
@@ -57,7 +156,7 @@ export async function loader({ request }: DataFunctionArgs) {
 const pastMonth = new Date(2023, 4, 5);
 
 export default function NotesRoute() {
-  // const data = useLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>();
   // const ownerDisplayName = data.owner.name ?? data.owner.username;
   // const navLinkDefaultClassName =
   //   "line-clamp-2 block rounded-l-full py-2 pl-8 pr-6 text-base lg:text-xl";
@@ -79,61 +178,73 @@ export default function NotesRoute() {
   };
 
   return (
-    <div className="flex h-full flex-col pb-12">
-      <Modal onClose={handleCloseModal} isOpen={isOpen} />
-
-      <div
-        // center
-        className=" flex flex-row items-center justify-center"
-      >
-        <DayPicker
-          className="rdp"
-          onDayClick={() => {
-            console.log("clicked");
-          }}
-          selected={range}
-        />
-        ;
-      </div>
-      {/* <DatePicker value={dayRange} onChange={setDayRange} /> */}
-      <div className="mx-auto w-full flex-grow pl-2 md:container md:rounded-3xl">
-        <div className="flex flex-row space-x-4 px-4 pt-4">
-          <div className="grid place-items-center rounded-xl bg-purple-200 p-2">
-            <RocketIcon />
-          </div>
-          <h1 className="text-center text-3xl font-bold">Activity Planner</h1>
+    <>
+      {/* Calendar */}
+      <div className="flex h-full flex-col">
+        <Modal onClose={handleCloseModal} isOpen={isOpen} />
+        <div className=" flex flex-row items-center justify-center">
+          <DayPicker
+            className="rdp"
+            onDayClick={() => {
+              console.log("clicked");
+            }}
+            selected={range}
+          />
         </div>
 
-        {/* CARD LIST */}
-        <ul className="flex flex-col gap-4 px-2 pt-6">
-          {[1, 2, 3].map((item, index) => {
-            return (
-              <li key={index} className="px-2">
-                <CardItem
-                  onClick={() => handleClickActivity("fitness")}
+        {/* Activity List */}
+        <div className="mx-auto w-full flex-1 flex-grow overflow-scroll pb-2 pl-2 md:container md:rounded-3xl">
+          <div className="flex flex-row space-x-4 px-4 pt-4">
+            <div className="grid place-items-center rounded-xl bg-purple-200  p-2">
+              <RocketIcon />
+            </div>
+            <h1 className="text-center text-3xl font-bold">Activity Planner</h1>
+          </div>
+
+          {/* CARD LIST */}
+          <ul className="flex flex-col gap-4 overflow-scroll px-2 pt-6">
+            {data.activities.map((item, index) => {
+              return (
+                <motion.li
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
                   key={index}
-                />
-              </li>
-            );
-          })}
-        </ul>
+                  className="px-2"
+                >
+                  <CardItem
+                    onClick={() => handleClickActivity("fitness")}
+                    key={index}
+                    activity={item}
+                  />
+                </motion.li>
+              );
+            })}
+          </ul>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
-const CardItem = ({ onClick }: { onClick: () => void }) => {
+const CardItem = ({
+  onClick,
+  activity,
+}: {
+  onClick: () => void;
+  activity: Activity;
+}) => {
   return (
     <button
       onClick={onClick}
-      className="border-night-700 flex w-full flex-col gap-3 rounded-2xl border-[1px] p-2 px-3"
+      className="flex w-full flex-col gap-3 rounded-2xl border-[2px] border-night-700 p-2 px-3"
     >
       {/* title and settings button ... (three dots) */}
       <div className="flex w-full flex-row  justify-between">
-        <h2 className="text-md font-bold">Dashboard design for admin</h2>
+        <h2 className="text-md font-bold">{activity.title}</h2>
 
         <div>
-          <button className="hover:bg-night-700/10 rounded-full p-1">
+          <button className="rounded-full p-1 hover:bg-night-700/10">
             <SettingsIcon />
           </button>
         </div>
@@ -141,8 +252,13 @@ const CardItem = ({ onClick }: { onClick: () => void }) => {
 
       {/* tags */}
       <div className="flex flex-row gap-2">
-        <Badge color="bg-red-200">Fun</Badge>
-        <Badge color="bg-green-200">Health</Badge>
+        {activity.tags.map((tag, index) => {
+          return (
+            <Badge key={index} color="bg-blue-200">
+              {tag}
+            </Badge>
+          );
+        })}
       </div>
 
       {/* meta */}
@@ -151,7 +267,12 @@ const CardItem = ({ onClick }: { onClick: () => void }) => {
           <div>
             <CalendarIcon className="h-4 w-4" />
           </div>
-          <p className="text-xs ">14 october 2022</p>
+          {/* <p className="text-xs ">14 october 2022</p> */}
+          {activity.datetime ? (
+            <p className="text-xs ">
+              {format(new Date(activity.datetime), "dd MMM yyyy 'at' HH:mm")}
+            </p>
+          ) : null}
         </div>
 
         {/* dsa */}
@@ -229,7 +350,7 @@ const Badge = ({
 }) => {
   return (
     <span
-      className={`${color} text-night-700 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ring-gray-500/10`}
+      className={`${color} inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-night-700 ring-1 ring-inset ring-gray-500/10`}
     >
       {children}
     </span>
