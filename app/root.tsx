@@ -44,21 +44,7 @@ export default function App() {
       </head>
 
       <body className="flex h-full flex-col">
-        {/* <header className="flex h-[6vh] items-center justify-between p-2 px-4"> */}
-        {/* <h3 className="text-lg font-semibold"></h3>
-          <nav>
-            <div className="flex flex-row items-center gap-2 pt-2">
-              <UserIcon />
-
-              <h3 className="text-lg font-semibold">Mick</h3>
-            </div>
-          </nav> */}
         <Example />
-        {/* </header> */}
-
-        <div className="px-4 py-3">
-          <Tabs />
-        </div>
 
         <div className="flex h-[94vh] flex-col">
           <Outlet />
@@ -107,11 +93,7 @@ function Example() {
                   <span className="sr-only">Open main menu</span>
 
                   <div className="flex flex-shrink-0 items-center">
-                    <img
-                      className="block h-8 w-auto lg:hidden"
-                      src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600"
-                      alt="Your Company"
-                    />
+                    <MenuIcon />
                   </div>
                 </Disclosure.Button>
               </div>
@@ -202,14 +184,14 @@ function Example() {
                 href="#"
                 className="block border-l-4 border-indigo-500 bg-indigo-50 py-2 pl-3 pr-4 text-base font-medium text-indigo-700"
               >
-                Dashboard
+                Activities
               </Disclosure.Button>
               <Disclosure.Button
                 as="a"
                 href="#"
                 className="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700"
               >
-                Team
+                About the trip
               </Disclosure.Button>
             </div>
           </Disclosure.Panel>
@@ -291,3 +273,22 @@ function Tabs() {
     </div>
   );
 }
+
+const MenuIcon = () => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth="1.5"
+      stroke="currentColor"
+      className="h-6 w-6"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+      />
+    </svg>
+  );
+};
