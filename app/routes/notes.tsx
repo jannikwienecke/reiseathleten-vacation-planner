@@ -347,7 +347,7 @@ const ActivityList = ({
           <div className="grid h-10 w-10 place-items-center rounded-xl   bg-purple-200 p-2">
             <RocketIcon />
           </div>
-          <h1 className="text-left text-2xl font-bold">{title}</h1>
+          <h1 className="text-left text-lg font-bold">{title}</h1>
         </div>
 
         {/* CARD LIST */}
@@ -575,6 +575,7 @@ const ActivityContent = ({
   onClickClose: () => void;
   onConfirmBookTime: (activity: Activity) => void;
 }) => {
+  const [isNew, setIsNew] = React.useState(false);
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
   const navigation = useNavigation();
@@ -603,11 +604,13 @@ const ActivityContent = ({
     });
   };
 
+  const [booked, setBooked] = React.useState(false);
   const onConfirmBookTimeRef = React.useRef(onConfirmBookTime);
   useEffect(() => {
     console.log({ state: navigation.state });
 
     if (actionData?.success && navigation.state === "loading") {
+      setBooked(true);
       setTimeout(() => {
         onConfirmBookTimeRef.current(activity);
       }, 1000);
@@ -615,6 +618,7 @@ const ActivityContent = ({
   }, [actionData?.success, activity, navigation.state]);
 
   const isSubmitting = navigation.state === "submitting";
+
   return (
     <>
       <div>
@@ -640,34 +644,34 @@ const ActivityContent = ({
           <>
             <div className="px-2 pt-4">Please select a day and time</div>
 
-            <div className="pt-2">
-              {inputDefaultDate || bookTime ? (
+            {inputDefaultDate || bookTime ? (
+              <div className="flex w-full flex-row justify-center pt-2">
                 <input
                   ref={inputRef}
                   type="datetime-local"
-                  className="block w-full rounded-md border border-gray-300 px-2 py-1 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="block w-[75vw] rounded-md border border-gray-300 px-2 py-1 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   defaultValue={
                     inputDefaultDate || new Date().toISOString().slice(0, 16)
                   }
                 />
-              ) : null}
-            </div>
+              </div>
+            ) : null}
           </>
         ) : (
           <>
-            <div className="flex flex-col gap-2 px-2 pt-4">
-              <div>
-                <Badge color="gray">Event Time:</Badge>
-              </div>
+            <div className="flex w-full flex-col justify-center gap-2 px-2 pt-4">
+              <p className="text-center">Event Time</p>
 
-              <input
-                disabled
-                type="datetime-local"
-                className="block w-full rounded-md border border-gray-300 px-2 py-1 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                defaultValue={
-                  inputDefaultDate || new Date().toISOString().slice(0, 16)
-                }
-              />
+              <div className="grid place-items-center">
+                <input
+                  disabled
+                  type="datetime-local"
+                  className="block w-[75vw] rounded-md border border-gray-300 px-2  py-1 text-center focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  defaultValue={
+                    inputDefaultDate || new Date().toISOString().slice(0, 16)
+                  }
+                />
+              </div>
             </div>
           </>
         )}
@@ -690,7 +694,7 @@ const ActivityContent = ({
                 </div>
                 <div>We are booking your activity...</div>
               </div>
-            ) : actionData?.success ? (
+            ) : booked ? (
               <>
                 <CheckIcon animate={true} />
               </>
