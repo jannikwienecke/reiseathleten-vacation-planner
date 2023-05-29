@@ -27,6 +27,7 @@
     "/server/build"
   ],
   "dependencies": {
+    "@githubnext/github-copilot-cli": "^0.1.33",
     "@headlessui/react": "^1.7.14",
     "@netlify/functions": "^1.6.0",
     "@remix-run/netlify": "^1.6.8",
@@ -58,8 +59,8 @@
     "eslint-config-prettier": "^8.5.0",
     "netlify-plugin-cypress": "^2.2.1",
     "npm-run-all": "^4.1.5",
-    "prettier": "^2.6.2",
-    "prettier-plugin-tailwindcss": "^0.2.0",
+    "prettier": "^2.8.8",
+    "prettier-plugin-tailwindcss": "^0.3.0",
     "tailwindcss": "^3.0.23",
     "typescript": "^4.6.3"
   },

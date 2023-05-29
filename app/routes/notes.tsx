@@ -1,21 +1,28 @@
-import { json, type DataFunctionArgs, LoaderArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { type DataFunctionArgs } from "@remix-run/node";
+import {
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+  useTransition,
+} from "@remix-run/react";
 // import { GeneralErrorBoundary } from "~/components/error-boundary.tsx";
 // import { prisma } from '~/utils/db.server.ts'
 // import { clsx } from 'clsx'
 // import { getUserImgSrc } from '~/utils/misc.ts'
 import { Dialog, Transition } from "@headlessui/react";
 import { addDays, format } from "date-fns";
-import { Fragment } from "react";
+import { Fragment, useEffect } from "react";
 import { DateRange, DayPicker } from "react-day-picker";
 import styles from "react-day-picker/dist/style.module.css";
 import { BottomSheet, BottomSheetRef } from "react-spring-bottom-sheet";
 // import { CheckIcon } from '@heroicons/react/24/outline'
 import React from "react";
 // import styles from "./notes/planner.css";
-import { requireUserId } from "~/session.server";
-import { GeneralErrorBoundary } from "~/components/error-boundary";
 import { motion } from "framer-motion";
+import { GeneralErrorBoundary } from "~/components/error-boundary";
+import { requireUserId } from "~/session.server";
+import { set } from "cypress/types/lodash";
 
 export function links() {
   return [{ rel: "stylesheet", href: styles }];
@@ -28,7 +35,7 @@ interface Activity {
   datetime?: string;
   duration: number;
   fixedDate: boolean;
-  tags: string[];
+  tags: Tag[];
 }
 
 interface LocationInfo {
@@ -36,6 +43,11 @@ interface LocationInfo {
   address: string;
   city: string;
   country: string;
+}
+
+interface Tag {
+  name: string;
+  color: string;
 }
 
 interface contact {
@@ -60,68 +72,140 @@ interface Vacation {
   notes: Note[];
 }
 
+const today = new Date();
+const tommorow = addDays(today, 1);
+
+const tags: Tag[] = [
+  {
+    name: "yoga",
+    color: "green",
+  },
+  {
+    name: "fitness",
+    color: "red",
+  },
+];
+
+const description = `Enjoy a one-on-one personal training session with our top trainer,
+Hans. Hans will work with you to develop a personalized training
+plan to help you achieve your fitness goals. Duration of the
+session is 1 hour. Please arrive 15 minutes before the start of
+your session.`;
+
 const activities: Activity[] = [
   {
     id: "1",
     title: "Yoga Session",
-    description: "Yoga session with my friend",
+    description,
     datetime: new Date().toISOString(),
     duration: 60,
     fixedDate: true,
-    tags: ["yoga", "fitness"],
+    tags,
   },
   {
     id: "2",
     title: "Personal Training",
-    description: "Personal training with my friend",
-    datetime: new Date().toISOString(),
+    description,
+    // datetime:
     duration: 60,
     fixedDate: false,
-    tags: ["fitness", "hardcore"],
+    tags: tags.slice(0, 1),
   },
   {
     id: "3",
     title: "Mount Hiking",
-    description: "Hike to the top of the mountain",
+    description,
     datetime: new Date().toISOString(),
     duration: 60,
     fixedDate: true,
-    tags: ["hiking", "outdoor"],
+    tags: tags.slice(1, 2),
   },
   {
     id: "4",
-    title: "Yoga Session 2",
-    description: "Yoga session with my friend",
-    datetime: new Date().toISOString(),
+    title: "Crossfit Session",
+    description,
+    datetime: tommorow.toISOString(),
     duration: 60,
     fixedDate: true,
-    tags: ["yoga", "fitness"],
+    tags,
   },
   {
     id: "5",
     title: "Personal Training 2",
-    description: "Personal training with my friend",
-    datetime: new Date().toISOString(),
+    description,
+    datetime: tommorow.toISOString(),
     duration: 60,
     fixedDate: false,
-    tags: ["fitness", "hardcore"],
+    tags,
   },
   {
     id: "6",
-    title: "Mount Hiking 2",
-    description: "Hike to the top of the mountain",
-    datetime: new Date().toISOString(),
+    title: "Best Hiking Tour",
+    description,
+    datetime: tommorow.toISOString(),
     duration: 60,
     fixedDate: true,
-    tags: ["hiking", "outdoor"],
+    tags,
+  },
+  {
+    id: "7",
+    title: "Best Hiking Tour",
+    description: "Hike to the top of the mountain",
+    datetime: today.toISOString(),
+    duration: 60,
+    fixedDate: true,
+    tags,
   },
 ];
+
+const vacation: Vacation = {
+  id: "1",
+  startDate: new Date().toISOString(),
+  // endDate in 5 days
+  endDate: addDays(new Date(), 5).toISOString(),
+  locationInfo: {
+    hotelName: "Hotel de la Marine",
+    address: "1 Place de la Concorde",
+    city: "Tenerife",
+    country: "Spain",
+  },
+  contact: {
+    name: "Julian Wienecke",
+    email: "info@reiseathleten.de",
+    phone: "+49 176 12345678",
+  },
+  activities: activities,
+  notes: [],
+};
 
 export async function loader({ request }: DataFunctionArgs) {
   const userId = await requireUserId(request);
   // const noteListItems = await getNoteListItems({ userId });
   return {
-    activities,
+    vacation,
+  };
+}
+
+export async function action({ request }: DataFunctionArgs) {
+  // await Promise.resolve();
+
+  const formData = await request.formData();
+  const datetime = formData.get("datetime");
+  const activityId = formData.get("activityId");
+  const activity = activities.find((a) => a.id === activityId);
+
+  console.log({ activityId, datetime });
+
+  const newPromise3000 = new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve("foo");
+    }, 1000);
+  });
+
+  await newPromise3000;
+
+  return {
+    success: true,
   };
 }
 
@@ -155,55 +239,121 @@ export async function loader({ request }: DataFunctionArgs) {
 
 const pastMonth = new Date(2023, 4, 5);
 
+const isSameDay = (date1: Date, date2: Date) => {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+};
+
 export default function NotesRoute() {
   const data = useLoaderData<typeof loader>();
+
+  // const
   // const ownerDisplayName = data.owner.name ?? data.owner.username;
   // const navLinkDefaultClassName =
   //   "line-clamp-2 block rounded-l-full py-2 pl-8 pr-6 text-base lg:text-xl";
 
-  const defaultSelected: DateRange = {
-    from: pastMonth,
-    to: addDays(pastMonth, 4),
+  const startDate = new Date(vacation.startDate);
+  const endDate = new Date(vacation.endDate);
+  const vacationRange: DateRange = {
+    from: startDate,
+    to: endDate,
   };
-  const [range, _] = React.useState<DateRange | undefined>(defaultSelected);
 
-  const [isOpen, setIsOpen] = React.useState(false);
-  const handleClickActivity = (activity: string) => {
-    setIsOpen(true);
+  const [selectedDate, setSelectedDate] = React.useState(startDate);
+
+  const [clickedActivity, setClickedActivity] = React.useState<Activity>();
+  const handleClickActivity = (activity: Activity) => {
+    setClickedActivity(activity);
   };
 
   const handleCloseModal = () => {
-    console.log("CLOSE MODAL");
-    setIsOpen(false);
+    setClickedActivity(undefined);
   };
+
+  const handleClickDay = (day: Date) => {
+    console.log(day);
+    setSelectedDate(day);
+  };
+
+  const handleActivityBooked = (activity: Activity) => {
+    console.log(activity);
+    console.log("BOOKED");
+    setClickedActivity(undefined);
+  };
+
+  const activitiesSelectedDay = activities.filter((activity) => {
+    if (!activity.datetime) return false;
+    const activityDate = new Date(activity.datetime);
+    return isSameDay(activityDate, selectedDate);
+  });
+
+  const activitiesUnallocated = activities.filter((a) => !a.datetime);
+
+  console.log("clickedActivity", clickedActivity);
 
   return (
     <>
       {/* Calendar */}
       <div className="flex h-full flex-col">
-        <Modal onClose={handleCloseModal} isOpen={isOpen} />
+        <Modal onClose={handleCloseModal} isOpen={!!clickedActivity}>
+          {clickedActivity ? (
+            <ActivityContent
+              activity={clickedActivity}
+              onClickClose={handleCloseModal}
+              onConfirmBookTime={handleActivityBooked}
+            />
+          ) : null}
+        </Modal>
+
         <div className=" flex flex-row items-center justify-center">
-          <DayPicker
-            className="rdp"
-            onDayClick={() => {
-              console.log("clicked");
-            }}
-            selected={range}
-          />
+          <DayPicker onDayClick={handleClickDay} selected={vacationRange} />
         </div>
 
-        {/* Activity List */}
-        <div className="mx-auto w-full flex-1 flex-grow overflow-scroll pb-2 pl-2 md:container md:rounded-3xl">
-          <div className="flex flex-row space-x-4 px-4 pt-4">
-            <div className="grid place-items-center rounded-xl bg-purple-200  p-2">
-              <RocketIcon />
-            </div>
-            <h1 className="text-center text-3xl font-bold">Activity Planner</h1>
-          </div>
+        <ActivityList
+          title={"Open Activities"}
+          activities={activitiesUnallocated}
+          onClickActivity={handleClickActivity}
+        />
 
-          {/* CARD LIST */}
-          <ul className="flex flex-col gap-4 overflow-scroll px-2 pt-6">
-            {data.activities.map((item, index) => {
+        <br />
+
+        <ActivityList
+          title={format(selectedDate, "dd.MM.yyyy")}
+          activities={activitiesSelectedDay}
+          onClickActivity={handleClickActivity}
+        />
+      </div>
+    </>
+  );
+}
+
+const ActivityList = ({
+  activities,
+  onClickActivity,
+  title,
+}: {
+  activities: Activity[];
+  title: string;
+  onClickActivity: (activity: Activity) => void;
+}) => {
+  return (
+    <div className="mx-auto w-full flex-1 pb-2 pl-2 md:container md:rounded-3xl">
+      <div className="flex h-full flex-col">
+        <div className="flex flex-row items-center space-x-4 px-4 pb-1 pt-4">
+          <div className="grid h-10 w-10 place-items-center rounded-xl   bg-purple-200 p-2">
+            <RocketIcon />
+          </div>
+          <h1 className="text-left text-2xl font-bold">{title}</h1>
+        </div>
+
+        {/* CARD LIST */}
+
+        {activities.length ? (
+          <ul className="flex flex-1 flex-col gap-4 overflow-scroll px-2 pt-2">
+            {activities.map((item, index) => {
               return (
                 <motion.li
                   initial={{ opacity: 0, y: 20 }}
@@ -213,7 +363,7 @@ export default function NotesRoute() {
                   className="px-2"
                 >
                   <CardItem
-                    onClick={() => handleClickActivity("fitness")}
+                    onClick={() => onClickActivity(item)}
                     key={index}
                     activity={item}
                   />
@@ -221,11 +371,18 @@ export default function NotesRoute() {
               );
             })}
           </ul>
-        </div>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center">
+            <div className="grid h-20 w-20 place-items-center rounded-xl bg-purple-200  p-2 pb-2">
+              <RocketIcon />
+            </div>
+            <p className="text-lg font-bold text-night-700">No activities</p>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
-}
+};
 
 const CardItem = ({
   onClick,
@@ -234,12 +391,28 @@ const CardItem = ({
   onClick: () => void;
   activity: Activity;
 }) => {
+  // date is not set -> user must set it
+  const isUnallocated = !activity.datetime;
+  // date cannot be changed by the user
+  const isFixed = activity.datetime && activity.fixedDate;
   return (
-    <button
+    <motion.div
+      whileTap={{ scale: 0.95 }}
+      animate={{
+        // nice yellow/orange color if date is not set
+        // modern grayisch if date is fixed
+        // nice green if date is set but not fixed
+        border: isUnallocated
+          ? "2px solid #FBBF24"
+          : isFixed
+          ? // ? "2px solid #E5E7EB"
+            // more dark
+            "2px solid #374151"
+          : "2px solid #10B981",
+      }}
       onClick={onClick}
-      className="flex w-full flex-col gap-3 rounded-2xl border-[2px] border-night-700 p-2 px-3"
+      className="flex w-full flex-col gap-3 rounded-2xl border-[2px] border-night-700 p-2 px-4"
     >
-      {/* title and settings button ... (three dots) */}
       <div className="flex w-full flex-row  justify-between">
         <h2 className="text-md font-bold">{activity.title}</h2>
 
@@ -251,14 +424,24 @@ const CardItem = ({
       </div>
 
       {/* tags */}
-      <div className="flex flex-row gap-2">
-        {activity.tags.map((tag, index) => {
-          return (
-            <Badge key={index} color="bg-blue-200">
-              {tag}
-            </Badge>
-          );
-        })}
+      <div className="flex w-full flex-row justify-between gap-2">
+        <div className="flex flex-1 flex-row gap-1">
+          {activity.tags.map((tag, index) => {
+            return (
+              <Badge key={index} color={tag.color}>
+                {tag.name}
+              </Badge>
+            );
+          })}
+        </div>
+
+        {isUnallocated ? (
+          <div className="flex flex-1 flex-row justify-center">
+            <button className="rounded-md border-[2px] border-accent-yellow p-1 px-2 py-1 hover:bg-night-700/10">
+              <p className="text-xs">Book a slot</p>
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {/* meta */}
@@ -267,20 +450,17 @@ const CardItem = ({
           <div>
             <CalendarIcon className="h-4 w-4" />
           </div>
-          {/* <p className="text-xs ">14 october 2022</p> */}
           {activity.datetime ? (
             <p className="text-xs ">
-              {format(new Date(activity.datetime), "dd MMM yyyy 'at' HH:mm")}
+              {format(new Date(activity.datetime), "dd MMM yyyy 'at' HH:mm")}{" "}
+              {isFixed ? "(Fixed Time)" : ""}
             </p>
-          ) : null}
+          ) : (
+            <p className="text-xs ">Not scheduled yet</p>
+          )}
         </div>
-
-        {/* dsa */}
-        <div></div>
       </div>
-
-      {/*  */}
-    </button>
+    </motion.div>
   );
 };
 
@@ -322,9 +502,9 @@ const CalendarIcon = ({ className }: { className?: string }) => {
   );
 };
 
-const RocketIcon = () => {
+const RocketIcon = ({ animate }: { animate?: boolean }) => {
   return (
-    <svg
+    <motion.svg
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -332,12 +512,15 @@ const RocketIcon = () => {
       stroke="currentColor"
       className="h-6 w-6"
     >
-      <path
+      <motion.path
+        initial={{ pathLength: animate ? 0 : 1 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 2, ease: "easeInOut" }}
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
       />
-    </svg>
+    </motion.svg>
   );
 };
 
@@ -345,12 +528,25 @@ const Badge = ({
   color,
   children,
 }: {
-  color?: string;
+  color: string;
   children: React.ReactNode;
 }) => {
+  const ColorDict = {
+    red: "bg-red-100 text-red-800",
+    green: "bg-green-100 text-green-800",
+    blue: "bg-blue-100 text-blue-800",
+    yellow: "bg-yellow-100 text-yellow-800",
+    purple: "bg-purple-100 text-purple-800",
+    pink: "bg-pink-100 text-pink-800",
+    indigo: "bg-indigo-100 text-indigo-800",
+    gray: "bg-gray-100 text-gray-800",
+    night: "bg-night-100 text-night-800",
+  };
+  const colorClasses =
+    ColorDict[color as keyof typeof ColorDict] || "bg-gray-100 text-gray-800";
   return (
     <span
-      className={`${color} inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-night-700 ring-1 ring-inset ring-gray-500/10`}
+      className={`${colorClasses} inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-night-700 ring-1 ring-inset ring-gray-500/10`}
     >
       {children}
     </span>
@@ -368,6 +564,153 @@ export function ErrorBoundary() {
     />
   );
 }
+
+const ActivityContent = ({
+  activity,
+  onClickClose,
+  onConfirmBookTime,
+}: {
+  activity: Activity;
+  onClickClose: () => void;
+  onConfirmBookTime: (activity: Activity) => void;
+}) => {
+  const actionData = useActionData<typeof action>();
+  const submit = useSubmit();
+  const navigation = useNavigation();
+
+  const isFixed = activity.fixedDate;
+  const inputDefaultDate = activity.datetime
+    ? new Date(activity.datetime).toISOString().slice(0, 16)
+    : null;
+
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [bookTime, setBookTime] = React.useState(false);
+  const handleClickBookTime = () => {
+    setBookTime(true);
+  };
+
+  const handleClickConfirm = () => {
+    if (!activity) return;
+
+    const datetime = inputRef.current?.value ?? "";
+    const formData = new FormData();
+    formData.append("datetime", datetime);
+    formData.append("activityId", activity?.id ?? "");
+
+    submit(formData, {
+      method: "post",
+    });
+  };
+
+  const onConfirmBookTimeRef = React.useRef(onConfirmBookTime);
+  useEffect(() => {
+    console.log({ state: navigation.state });
+
+    if (actionData?.success && navigation.state === "loading") {
+      setTimeout(() => {
+        onConfirmBookTimeRef.current(activity);
+      }, 1000);
+    }
+  }, [actionData?.success, activity, navigation.state]);
+
+  const isSubmitting = navigation.state === "submitting";
+  return (
+    <>
+      <div>
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+          <RocketIcon />
+        </div>
+        <div className="mt-3 text-center sm:mt-5">
+          <Dialog.Title
+            as="h3"
+            className="text-base font-semibold leading-6 text-gray-900"
+          >
+            Personal Training Session with Hans
+          </Dialog.Title>
+          <div className="mt-2">
+            <p className="text-sm text-gray-500">
+              {/* text about personal training */}
+              {activity.description}
+            </p>
+          </div>
+        </div>
+
+        {!isFixed ? (
+          <>
+            <div className="px-2 pt-4">Please select a day and time</div>
+
+            <div className="pt-2">
+              {inputDefaultDate || bookTime ? (
+                <input
+                  ref={inputRef}
+                  type="datetime-local"
+                  className="block w-full rounded-md border border-gray-300 px-2 py-1 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  defaultValue={
+                    inputDefaultDate || new Date().toISOString().slice(0, 16)
+                  }
+                />
+              ) : null}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex flex-col gap-2 px-2 pt-4">
+              <div>
+                <Badge color="gray">Event Time:</Badge>
+              </div>
+
+              <input
+                disabled
+                type="datetime-local"
+                className="block w-full rounded-md border border-gray-300 px-2 py-1 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                defaultValue={
+                  inputDefaultDate || new Date().toISOString().slice(0, 16)
+                }
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="mt-5 flex flex-col gap-1 sm:mt-6">
+        {!isFixed ? (
+          <button
+            disabled={isSubmitting}
+            type="button"
+            className={`inline-flex w-full justify-center rounded-md ${
+              bookTime ? "bg-green-300 " : "bg-yellow-300"
+            } px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm  focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 `}
+            onClick={bookTime ? handleClickConfirm : handleClickBookTime}
+          >
+            {isSubmitting ? (
+              <div className="flex flex-row items-center gap-2">
+                <div>
+                  <RocketIcon animate={true} />
+                </div>
+                <div>We are booking your activity...</div>
+              </div>
+            ) : actionData?.success ? (
+              <>
+                <CheckIcon animate={true} />
+              </>
+            ) : (
+              <>{bookTime ? "Confirm" : "Book a time"} </>
+            )}
+          </button>
+        ) : null}
+
+        <button
+          type="button"
+          disabled={isSubmitting}
+          className="inline-flex w-full justify-center rounded-md bg-indigo-300 px-3 py-2 text-sm font-semibold text-black shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          onClick={onClickClose}
+        >
+          Go back to dashboard
+        </button>
+      </div>
+    </>
+  );
+};
 
 const BottomSheetModal = () => {
   const [expandOnContentDrag, setExpandOnContentDrag] = React.useState(true);
@@ -411,9 +754,11 @@ const BottomSheetModal = () => {
 const Modal = ({
   isOpen,
   onClose,
+  children,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  children: React.ReactNode;
 }) => {
   const [open, setOpen] = React.useState(isOpen);
 
@@ -461,54 +806,45 @@ const Modal = ({
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
               <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6">
-                <div>
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                    <RocketIcon />
-                  </div>
-                  <div className="mt-3 text-center sm:mt-5">
-                    <Dialog.Title
-                      as="h3"
-                      className="text-base font-semibold leading-6 text-gray-900"
-                    >
-                      Personal Training Session with Hans
-                    </Dialog.Title>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500">
-                        {/* text about personal training */}
-                        Enjoy a one-on-one personal training session with our
-                        top trainer, Hans. Hans will work with you to develop a
-                        personalized training plan to help you achieve your
-                        fitness goals. Duration of the session is 1 hour. Please
-                        arrive 15 minutes before the start of your session.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="px-2 pt-4">Please select a day and time</div>
-
-                  {/* Date time picker */}
-                  <div className="pt-2">
-                    <input
-                      type="datetime-local"
-                      className="block w-full rounded-md border border-gray-300 px-2 py-1 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      defaultValue={new Date().toISOString().slice(0, 16)}
-                    />
-                  </div>
-                </div>
-                <div className="mt-5 sm:mt-6">
-                  <button
-                    type="button"
-                    className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                    onClick={handleClose}
-                  >
-                    Go back to dashboard
-                  </button>
-                </div>
+                {children}
               </Dialog.Panel>
             </Transition.Child>
           </div>
         </div>
       </Dialog>
     </Transition.Root>
+  );
+};
+
+const CheckIcon = ({ animate }: { animate: boolean }) => {
+  return (
+    <motion.svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke-width="1.5"
+      stroke="currentColor"
+      className="h-6 w-6"
+    >
+      <motion.path
+        initial={{
+          pathLength: 0,
+        }}
+        animate={
+          animate
+            ? {
+                scale: [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                pathLength: [0, 0.2, 0.4, 0.6, 0.8, 0.9, 0.95, 0.98, 0.99, 1],
+              }
+            : {}
+        }
+        transition={{
+          duration: 1,
+        }}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </motion.svg>
   );
 };
