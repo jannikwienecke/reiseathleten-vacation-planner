@@ -297,6 +297,7 @@ export default function NotesRoute() {
   return (
     <>
       {/* Calendar */}
+      {/*  */}
       <div className="flex h-full flex-col">
         <Modal onClose={handleCloseModal} isOpen={!!clickedActivity}>
           {clickedActivity ? (
